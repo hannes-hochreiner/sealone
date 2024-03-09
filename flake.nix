@@ -51,7 +51,7 @@
       let
         cfg = config.hochreiner.services.sealone;
         pkgs = import nixpkgs {
-          inherit sysyem;
+          inherit system;
           # system = "x86_64-linux";
         };
       in {
