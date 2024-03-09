@@ -1,0 +1,22 @@
+layout {
+    tab name="git" {
+        pane {
+			command "lazygit"
+			cwd "/home/hannes/Repository/sealone"
+		}
+    }
+    tab name="editor" {
+        pane size="80%" {
+			command "yazi"
+			cwd "/home/hannes/Repository/sealone"
+			focus true
+		}
+        pane size="20%" {
+			command "nu"
+			cwd "/home/hannes/Repository/sealone"
+		}
+    }
+}
+env {
+	EDITOR "/run/current-system/sw/bin/hx"
+}
