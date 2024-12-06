@@ -72,16 +72,39 @@
         };
   
         config = mkIf cfg.enable {
-          systemd.services."hochreiner.sealone" = {
+          systemd.user.services."hochreiner.sealone" = {
             serviceConfig = let pkg = self.defaultPackage.x86_64-linux; in {
-              ExecStart = "${pkg}/bin/SealOne --nogui ${if cfg.rotate then "--rotate-display" else ""} ${if cfg.zoom then "--toggle-display-zoom" else ""}";
-              DynamicUser = true;
+              Type = "exec";
+              ExecStart = "${pkg}/bin/SealOne --nogui";
+              # DynamicUser = true;
+            };
+            unitConfig = {
+              Wants = "hochreiner.sealone_gui.service";
+              BindsTo = "dev-sealone.device";
+              After = "dev-sealone.device";
+            };
+          };
+          systemd.user.services."hochreiner.sealone_gui" = {
+            serviceConfig = let pkg = self.defaultPackage.x86_64-linux; in {
+              Type = "oneshot";
+              ExecStartPre = "/run/current-system/sw/bin/sleep 2";
+              ExecStart = [
+                "${pkg}/bin/SealOne ${if cfg.rotate then "--rotate-display" else ""} ${if cfg.zoom then "--toggle-display-zoom" else ""}"
+                "${pkg}/bin/SealOne ${if cfg.rotate then "--rotate-display" else ""} ${if cfg.zoom then "--toggle-display-zoom" else ""}"
+              ];
+              SuccessExitStatus = "1";
+              # Environment = "DISPLAY=:1 WAYLAND_DISPLAY=wayland-0";
+              # DynamicUser = true;
+            };
+            unitConfig = {
+              After = "hochreiner.sealone.service";
             };
           };
           boot.kernelModules = [ "sg" ];
+            # SUBSYSTEMS=="usb", ACTION=="add", ATTRS{idVendor}=="219c", ATTRS{idProduct}=="0010", MODE:="0666", RUN+="${pkgs.systemd}/bin/systemctl --user start hochreiner.sealone.service"
+            # SUBSYSTEMS=="usb", ACTION=="remove", ATTRS{idVendor}=="219c", ATTRS{idProduct}=="0010", MODE:="0666", RUN+="${pkgs.systemd}/bin/systemctl --user stop hochreiner.sealone.service"
           services.udev.extraRules = ''
-            SUBSYSTEMS=="usb", ACTION=="add", ATTRS{idVendor}=="219c", ATTRS{idProduct}=="0010", MODE:="0666", RUN+="${pkgs.systemd}/bin/systemctl start hochreiner.sealone.service"
-            SUBSYSTEMS=="usb", ACTION=="remove", ATTRS{idVendor}=="219c", ATTRS{idProduct}=="0010", MODE:="0666", RUN+="${pkgs.systemd}/bin/systemctl stop hochreiner.sealone.service"
+            SUBSYSTEMS=="usb", ACTION=="add", ATTRS{idVendor}=="219c", ATTRS{idProduct}=="0010", MODE:="0666", SYMLINK+="sealone", TAG+="systemd", ENV{SYSTEMD_USER_WANTS}+="hochreiner.sealone.service"
           '';
         };      
       };
